@@ -7,28 +7,6 @@ import path from 'path'
 export default defineConfig({
   plugins: [
     react(),
-    {
-      name: 'spa-portal-fallback',
-      configureServer(server) {
-        server.middlewares.use(async (req, res, next) => {
-          const spaRoutes = ['/login', '/register', '/dashboard'];
-          const url = req.url.split('?')[0];
-          if (spaRoutes.some(route => url === route || url.startsWith(route + '/'))) {
-            const portalPath = path.resolve(__dirname, 'portal.html');
-            const content = fs.readFileSync(portalPath, 'utf-8');
-            try {
-              const transformed = await server.transformIndexHtml(req.url, content);
-              res.setHeader('Content-Type', 'text/html');
-              res.end(transformed);
-              return;
-            } catch (e) {
-              return next(e);
-            }
-          }
-          next();
-        });
-      }
-    }
   ],
   server: {
     proxy: {
@@ -39,4 +17,3 @@ export default defineConfig({
     }
   }
 })
-
