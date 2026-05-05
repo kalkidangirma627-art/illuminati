@@ -124,7 +124,9 @@
      * API Connection Configuration
      * Update the production URL once your backend is deployed.
      */
-    const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:3001' : 'https://your-api-production-url.vercel.app'; // TODO: Replace with your actual production backend URL
+    const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+      ? 'http://localhost:3001'
+      : 'https://your-api-production-url.vercel.app';
 
     // Clear old sessions to ensure the login form is always shown
     localStorage.clear();
