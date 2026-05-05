@@ -1,0 +1,65 @@
+I have a perfect idea of changing this website in to Ethioian Illuminati Website by first changing any text in the site in to rellated only 
+,(Note that there may be image like and undetectable texts so dont forget to change those types of texts also)
+
+
+Project Blueprint: 
+Ethiopian Iluminati Agency" Web Platform
+
+Project Type: 
+Membership-based hierarchical web platform.
+
+Core Concept: A simulated, exclusive, invite-only organization that assigns agents to members, manages tasks, and controls information flow.
+
+1. User Roles & Permissions
+The system requires strict access control divided into three tiers:
+
+ * Admin (Web Manager): 
+Full system control. 
+Can view all users, approve/reject pending registrations, assign agents to members, edit user details, upload content (leadership, testimonies, announcements), and trigger SMS notifications.
+
+ * Agent: 
+Mid-level management. 
+Can only view and manage their specifically assigned members. Capabilities include viewing member details, sending instructions/tasks, adding internal notes, and monitoring member status.
+
+ * Member: The end-user. 
+Accesses a personal dashboard to view their assigned agent, check membership status, receive notifications, and view assigned activities.
+
+2. Core Workflows
+ * Registration & Onboarding Flow: 
+   1. User receives an invite and navigates to the Registration page.
+   2. Fills out an extensive form (Name, Phone, Bank, Gender, Age, City, Occupation, Intent, Contact Method, Profile Photo, Password).
+   3. Completes phone verification.
+   4. Account defaults to "Pending" status.
+   5. Admin reviews and approves the application.
+   6. User receives an SMS approval notification and is granted login access.
+ * Notification System: Delivers updates via SMS and dashboard pop-ups for events like registration approval/rejection, assigned duties, new instructions, and general announcements.
+   
+#### Authentication & Portals
+ * Registration Page: 
+Invite-only form with document/photo upload capabilities.
+
+ * Login Page: 
+Phone number and password authentication. Redirects to the respective dashboard based on the user role.
+Add a LogIn button on the wide green section which have the "Growth becomes harmony when it’s sharedcreating a future alive with possibility" text positioned on the lower or bottom side of the text and make the button have the same exact style as the "EXPLORE SYSTEMS" or "GET IN TOUCH" buttons.
+
+ * Member Dashboard: 
+Displays full name, profile photo, assigned agent's name/photo, current status (Pending, Approved, Suspended), pop-up notifications, and assigned duties/notes. Shows *only* the contact details of their assigned agent.
+
+ * Agent Panel: 
+A restricted view showing only assigned members, their details, and tools to send instructions or leave notes.
+
+ * Admin Dashboard: 
+The central command center. Includes searchable member records, status toggles, agent assignment tools, announcement posting, and content management tools.
+
+
+
+
+
+
+
+
+
+
+
+
+

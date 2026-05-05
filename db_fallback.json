@@ -1,0 +1,69 @@
+{
+  "users": [
+    {
+      "_id": "admin_id",
+      "name": "System Admin",
+      "email": "admin@illuminati.ethiopia",
+      "password": "$2b$10$g5ZVzwegYHus71/HTm56NemQRY/lZwC1Ln3R2ReGJOZHdrvte/OTe",
+      "role": "admin",
+      "status": "approved",
+      "balance": 0
+    },
+    {
+      "_id": "agent_id",
+      "name": "Alpha Agent",
+      "email": "agent@illuminati.ethiopia",
+      "password": "$2b$10$KJGBhDBhhe3/ol3P1bpGQec7d9LfQL/cJVz2Km/RGGV3L9E0fVz2a",
+      "role": "agent",
+      "status": "approved",
+      "balance": 15000
+    },
+    {
+      "_id": "member_id",
+      "name": "John Member",
+      "email": "member@illuminati.ethiopia",
+      "password": "$2b$10$/ASPAnG7IBLsUZv3PHFZlezi0lBHqrycXtFK5hvBoZfnBnQIsBc0q",
+      "role": "member",
+      "status": "approved",
+      "balance": 24500
+    }
+  ],
+  "requirements": [
+    {
+      "_id": "req_0",
+      "memberId": "member_id",
+      "title": "Document Processing",
+      "progress": 74,
+      "isCompleted": true
+    },
+    {
+      "_id": "req_1",
+      "memberId": "member_id",
+      "title": "Biometrics Legitimacy",
+      "progress": 20,
+      "isCompleted": false
+    },
+    {
+      "_id": "req_2",
+      "memberId": "member_id",
+      "title": "First Income",
+      "progress": 40,
+      "isCompleted": false
+    },
+    {
+      "_id": "req_3",
+      "memberId": "member_id",
+      "title": "Document Transaction to HQ",
+      "progress": 60,
+      "isCompleted": false
+    },
+    {
+      "_id": "req_4",
+      "memberId": "member_id",
+      "title": "Payment",
+      "progress": 80,
+      "isCompleted": false
+    }
+  ],
+  "messages": []
+}

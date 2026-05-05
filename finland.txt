@@ -1,0 +1,98 @@
+I have a perfect idea of changing this website in to Ethioian Illuminati Website by first changing any text in the site in to rellated only 
+,(Note that there may be image like and undetectable texts so dont forget to change those types of texts also)
+
+
+Project Blueprint: 
+Ethiopian Iluminati Agency" Web Platform
+
+Project Type: 
+Membership-based hierarchical web platform.
+
+Core Concept: A simulated, exclusive, invite-only organization that assigns agents to members, manages tasks, and controls information flow.
+
+1. User Roles & Permissions
+The system requires strict access control divided into three tiers:
+
+ * Admin (Web Manager): 
+Full system control. 
+Can view all users, approve/reject pending registrations, assign agents to members, edit user details, upload content (leadership, testimonies, announcements), and trigger SMS notifications.
+
+ * Agent: 
+Mid-level management. 
+Can only view and manage their specifically assigned members. Capabilities include viewing member details, sending instructions/tasks, adding internal notes, and monitoring member status.
+
+ * Member: The end-user. 
+Accesses a personal dashboard to view their assigned agent, check membership status, receive notifications, and view assigned activities.
+
+2. Core Workflows
+ * Registration & Onboarding Flow: 
+   1. User receives an invite and navigates to the Registration page.
+   2. Fills out an extensive form (Name, Phone, Bank, Gender, Age, City, Occupation, Intent, Contact Method, Profile Photo, Password).
+   3. Completes phone verification.
+   4. Account defaults to "Pending" status.
+   5. Admin reviews and approves the application.
+   6. User receives an SMS approval notification and is granted login access.
+ * Notification System: Delivers updates via SMS and dashboard pop-ups for events like registration approval/rejection, assigned duties, new instructions, and general announcements.
+   
+#### Authentication & Portals
+ * Registration Page: 
+Invite-only form with document/photo upload capabilities.
+
+ * Login Page: 
+Phone number and password authentication. Redirects to the respective dashboard based on the user role.
+Add a LogIn button on the wide green section which have the "Growth becomes harmony when it’s sharedcreating a future alive with possibility" text positioned on the lower or bottom side of the text and make the button have the same exact style as the "EXPLORE SYSTEMS" or "GET IN TOUCH" buttons.
+
+ * Member Dashboard: 
+Displays full name, profile photo, assigned agent's name/photo, current status (Pending, Approved, Suspended), pop-up notifications, and assigned duties/notes. Shows *only* the contact details of their assigned agent.
+
+ * Agent Panel: 
+A restricted view showing only assigned members, their details, and tools to send instructions or leave notes.
+
+ * Admin Dashboard: 
+The central command center. Includes searchable member records, status toggles, agent assignment tools, announcement posting, and content management tools.
+
+
+
+
+System Role & Context:-
+
+Your task is to redesign and refactor a multi-role dashboard (Member, Agent, Admin) based on an existing 
+visual reference: 
+codebase:
+
+Task 1: Visual Synchronization
+
+* Action: Apply the exact UI from the provided image and source code folder to all three dashboard views (Admin, Agent, Member).
+* Requirement: Maintain consistent styling across all components, ensuring the theme is unified.
+
+Task 2: Agent Dashboard Refactoring
+Update the statistics and member management features as follows:
+
+* KPI Cards:
+   * "In Progress": Display the count of members whose status is "In Progress" for any of the 5 core requirements.
+   * "Completed" (formerly "Upcoming"): Display the count of members who have finished all 5 requirements.
+   * "Total Projects": Display the sum of (In Progress + Completed) members.
+
+
+* Member Management UI:
+* Implement a searchable list of assigned members.
+   * Detail View: Clicking a member must open a progress tracking interface.
+   * Requirement Cards: Replace old labels (Web Design, etc.) with: Document Processing, Biometrics Legitimacy, First Income, Document Transaction to HQ, and Payment.
+   * Controls: Each card must include a completion checkbox, a "Days Left" input field, and a percentage progress input field.
+* Communication: Retain the "Client Messages" UI theme but implement a messaging interface for Agents to send updates to members.
+
+Task 3: Member Dashboard Refactoring
+Simplify the member view to focus on personal progress:
+
+* Cleanup: Remove the "In Progress," "Completed," and "Total Projects" KPI cards.
+* Progress Tracking: Replace old category labels with the 5 core requirements listed above. Show the real-time progress (percentage/status) as updated by their Agent.
+* Messaging: Members can send messages to their Agent and must only see their own message history.
+
+
+
+
+
+
+
+
+
