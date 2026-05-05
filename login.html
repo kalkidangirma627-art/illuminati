@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Illuminati.ethiopia - Access Portal</title>
@@ -14,19 +15,25 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
   <style>
     @font-face {
       font-family: 'Amoria';
       src: url('/fonts/AMORIA.otf') format('opentype');
     }
-    body { font-family: 'Inter', Arial, sans-serif; }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+    }
+
     .login-title {
       font-family: 'Amoria', serif;
       font-weight: 700;
       letter-spacing: 0.05em;
       line-height: 1.1;
     }
+
     .login-title .sub {
       font-family: 'Inter', sans-serif;
       font-size: 0.35em;
@@ -36,9 +43,11 @@
       display: block;
       margin-top: 2px;
     }
+
     #checkbox-signin {
       border-radius: 4px !important;
     }
+
     #login-error {
       color: #ef4444;
       font-size: 0.85rem;
@@ -48,14 +57,17 @@
     }
   </style>
 </head>
-<body class="h-screen w-full bg-cover bg-center relative bg-no-repeat" style="background-image: url('https://i.postimg.cc/vTXTYy2P/login-bg.jpg')">
+
+<body class="h-screen w-full bg-cover bg-center relative bg-no-repeat"
+  style="background-image: url('https://i.postimg.cc/vTXTYy2P/login-bg.jpg')">
   <div class="inline-flex items-center justify-center p-4 bg-transparent h-full w-full sm:w-auto">
     <div class="h-full w-full sm:min-w-[460px]">
-      <div class="bg-black/40 backdrop-blur-3xl lg:max-w-[480px] z-10 p-6 relative w-full h-full border-t-4 border-green-600 rounded-lg">
+      <div
+        class="bg-black/40 backdrop-blur-3xl lg:max-w-[480px] z-10 p-6 relative w-full h-full border-t-4 border-green-600 rounded-lg">
         <div class="flex flex-col h-full gap-4">
           <div class="mb-8 text-center lg:text-start">
             <a href="index.html" class="flex justify-center lg:justify-start items-center gap-3">
-              <img src="public/assets/ethiopiaemblem.svg" alt="Emblem" class="w-10 h-10">
+              <img src="/assets/ethiopiaemblem.svg" alt="Emblem" class="w-10 h-10">
               <h1 class="login-title text-3xl text-white">
                 THE ORDER
                 <span class="sub text-white">.ethiopia</span>
@@ -70,26 +82,37 @@
 
             <form id="login-form">
               <div class="mb-4">
-                <label for="emailaddress" class="block text-base/normal font-semibold text-gray-200 mb-2">Agent ID / Email</label>
-                <input class="block w-full rounded py-1.5 px-3 bg-transparent border border-white/10 text-white/80 focus:border-green-500 focus:outline-0 focus:ring-0" type="text" id="emailaddress" required placeholder="Enter your ID" />
+                <label for="emailaddress" class="block text-base/normal font-semibold text-gray-200 mb-2">Agent ID /
+                  Email</label>
+                <input
+                  class="block w-full rounded py-1.5 px-3 bg-transparent border border-white/10 text-white/80 focus:border-green-500 focus:outline-0 focus:ring-0"
+                  type="text" id="emailaddress" required placeholder="Enter your ID" />
               </div>
               <div class="mb-4">
                 <label for="password" class="block text-base/normal font-semibold text-gray-200 mb-2">Passphrase</label>
-                <input class="block w-full rounded py-1.5 px-3 bg-transparent border border-white/10 text-white/80 focus:border-green-500 focus:outline-0 focus:ring-0" type="password" required id="password" placeholder="Enter your passphrase" />
+                <input
+                  class="block w-full rounded py-1.5 px-3 bg-transparent border border-white/10 text-white/80 focus:border-green-500 focus:outline-0 focus:ring-0"
+                  type="password" required id="password" placeholder="Enter your passphrase" />
               </div>
               <div class="flex justify-between items-center gap-1 mb-6">
                 <div class="inline-flex items-center">
-                  <input type="checkbox" class="h-4 w-4 rounded border-white/20 bg-white/20 text-green-600 shadow-sm focus:border-green-600 focus:ring focus:ring-green-600/60 focus:ring-offset-0" id="checkbox-signin" />
-                  <label class="text-base/none ms-2 text-gray-200 align-middle select-none" for="checkbox-signin">Secure Session</label>
+                  <input type="checkbox"
+                    class="h-4 w-4 rounded border-white/20 bg-white/20 text-green-600 shadow-sm focus:border-green-600 focus:ring focus:ring-green-600/60 focus:ring-offset-0"
+                    id="checkbox-signin" />
+                  <label class="text-base/none ms-2 text-gray-200 align-middle select-none" for="checkbox-signin">Secure
+                    Session</label>
                 </div>
               </div>
               <div class="mb-6 text-center">
-                <button class="w-full inline-flex items-center justify-center px-6 py-2 backdrop-blur-2xl bg-white/10 text-white border border-white/20 rounded-lg transition-all duration-500 group hover:bg-green-600/60 hover:text-white mt-5" type="submit" id="login-btn">Initialize Override</button>
+                <button
+                  class="w-full inline-flex items-center justify-center px-6 py-2 backdrop-blur-2xl bg-white/10 text-white border border-white/20 rounded-lg transition-all duration-500 group hover:bg-green-600/60 hover:text-white mt-5"
+                  type="submit" id="login-btn">Initialize Override</button>
               </div>
             </form>
           </div>
           <footer class="text-center mt-6">
-            <p class="text-base inline-block px-2 py-1 text-gray-400">No clearance? <a href="register.html" class="text-green-500 ms-1 hover:underline"><b>Request Access</b></a></p>
+            <p class="text-base inline-block px-2 py-1 text-gray-400">No clearance? <a href="register.html"
+                class="text-green-500 ms-1 hover:underline"><b>Request Access</b></a></p>
           </footer>
         </div>
       </div>
@@ -98,7 +121,7 @@
 
   <script>
     const API_BASE = 'http://localhost:3001';
-    
+
     // Clear old sessions to ensure the login form is always shown
     localStorage.clear();
 
@@ -143,4 +166,5 @@
     });
   </script>
 </body>
+
 </html>
