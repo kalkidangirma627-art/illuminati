@@ -110,16 +110,68 @@ const authenticateToken = (req, res, next) => {
 
 // --- API ---
 app.post('/api/auth/login', async (req, res) => {
-  const { email, password } = req.body;
-  const findUser = async () => {
-    if (useFallback) return getFallbackData().users.find(u => u.email === email);
-    return await User.findOne({ email });
-  };
-  const user = await findUser();
-  if (!user || !(await bcrypt.compare(password, user.password))) return res.status(400).json({ error: 'Invalid credentials' });
-  const token = jwt.sign({ id: user._id, email: user.email, role: user.role, name: user.name }, JWT_SECRET);
-  res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
-});
+   const { email, password } = req.body;
+   const findUser = async () => {
+     if (useFallback) return getFallbackData().users.find(u => u.email === email);
+     return await User.findOne({ email });
+   };
+   const user = await findUser();
+   if (!user || !(await bcrypt.compare(password, user.password))) return res.status(400).json({ error: 'Invalid credentials' });
+   const token = jwt.sign({ id: user._id, email: user.email, role: user.role, name: user.name }, JWT_SECRET);
+   res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+ });
+
+app.post('/api/auth/register', async (req, res) => {
+   const { name, email, password, role } = req.body;
+   // Basic validation
+   if (!name || !email || !password || !role) {
+     return res.status(400).json({ error: 'All fields are required' });
+   }
+   if (!['member', 'agent'].includes(role)) {
+     return res.status(400).json({ error: 'Invalid role. Must be member or agent' });
+   }
+
+   try {
+     // Check if user already exists
+     const existingUser = await User.findOne({ email });
+     if (existingUser) {
+       return res.status(400).json({ error: 'User with this email already exists' });
+     }
+
+     // Hash password
+     const hashedPassword = await bcrypt.hash(password, 10);
+
+     // Create new user
+     const newUser = new User({
+       name,
+       email,
+       password: hashedPassword,
+       role,
+       status: 'approved', // Auto-approve for simplicity
+       balance: 0,
+       profilePicture: ''
+     });
+
+     // Save user
+     const savedUser = await newUser.save();
+
+     // Generate JWT token
+     const token = jwt.sign({ id: savedUser._id, email: savedUser.email, role: savedUser.role, name: savedUser.name }, JWT_SECRET);
+
+     res.status(201).json({ 
+       token, 
+       user: { 
+         id: savedUser._id, 
+         name: savedUser.name, 
+         email: savedUser.email, 
+         role: savedUser.role 
+       } 
+     });
+   } catch (err) {
+     console.error('Registration error:', err);
+     res.status(500).json({ error: 'Registration failed' });
+   }
+ });
 
 app.get('/api/user/me', authenticateToken, async (req, res) => {
   if (useFallback) {
