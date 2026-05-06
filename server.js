@@ -122,13 +122,15 @@ app.get('/api/health', (req, res) => {
 });
 
 // --- API ---
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const body = req.body;
-    res.json({ received: body, type: typeof body, keys: body ? Object.keys(body) : null });
-  } catch (err) {
-    res.json({ error: 'EXCEPTION: ' + err.message });
-  }
+app.post('/api/auth/login', (req, res) => {
+  let raw = '';
+  req.on('data', chunk => raw += chunk);
+  req.on('end', () => {
+    res.json({ raw, length: raw.length });
+  });
+  req.on('error', err => {
+    res.json({ error: err.message });
+  });
  });
 
 app.post('/api/auth/register', async (req, res) => {
