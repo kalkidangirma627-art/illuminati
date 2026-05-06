@@ -3,11 +3,12 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "npm start",
+    "startCommand": "node server.js",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 300
   },
   "variables": {
-    "NIXPACKS_NODE_VERSION": "20"
+    "NIXPACKS_NODE_VERSION": "20",
+    "NIXPACKS_BUILD_CMD": "echo 'Backend only - no build needed'"
   }
 }
