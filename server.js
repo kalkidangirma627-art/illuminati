@@ -142,8 +142,8 @@ app.post('/api/auth/login', async (req, res) => {
     const token = jwt.sign({ id: user._id.toString(), email: user.email, role: user.role, name: user.name }, JWT_SECRET);
     res.json({ token, user: { id: user._id.toString(), name: user.name, email: user.email, role: user.role } });
   } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Login error:', err.message, err.stack);
+    res.status(500).json({ error: 'Internal server error', detail: err.message });
   }
  });
 
@@ -178,8 +178,8 @@ app.post('/api/auth/register', async (req, res) => {
     const token = jwt.sign({ id: savedUser._id.toString(), email: savedUser.email, role: savedUser.role, name: savedUser.name }, JWT_SECRET);
     res.status(201).json({ token, user: { id: savedUser._id.toString(), name: savedUser.name, email: savedUser.email, role: savedUser.role } });
   } catch (err) {
-    console.error('Registration error:', err);
-    res.status(500).json({ error: 'Registration failed' });
+    console.error('Registration error:', err.message, err.stack);
+    res.status(500).json({ error: 'Registration failed', detail: err.message });
   }
  });
 
