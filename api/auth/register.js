@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 
@@ -28,31 +29,57 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
     res.status(405).json({ error: 'Method Not Allowed' });
     return;
   }
 
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    const { name, email, password, role } = req.body;
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ error: 'All fields are required' });
     }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
+    if (!['member', 'agent'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
 
     await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 10000 });
 
-    const u = await User.findById(decoded.id).select('-password').lean();
-    if (!u) return res.status(404).json({ error: 'User not found' });
-    res.status(200).json(u);
-  } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ error: 'Invalid token' });
+    const existingUser = await User.findOne({ email }).lean();
+    if (existingUser) {
+      return res.status(400).json({ error: 'User with this email already exists' });
     }
-    console.error('Get user error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({
+      name,
+      email,
+      password: hashedPassword,
+      role,
+      status: 'approved',
+      balance: 0,
+      profilePicture: ''
+    });
+
+    const savedUser = await newUser.save();
+
+    const token = jwt.sign(
+      { id: savedUser._id.toString(), email: savedUser.email, role: savedUser.role, name: savedUser.name },
+      JWT_SECRET
+    );
+
+    res.status(201).json({
+      token,
+      user: {
+        id: savedUser._id.toString(),
+        name: savedUser.name,
+        email: savedUser.email,
+        role: savedUser.role
+      }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Registration failed' });
   }
 }

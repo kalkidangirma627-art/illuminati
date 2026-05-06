@@ -1,17 +1,9 @@
+import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
 
-dotenv.config();
+const JWT_SECRET = process.env.JWT_SECRET || 'lumosine-clone-secure-jwt-key-2026-change-in-production-please';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://kalkidangirma627_db_user:jFAghIZQJaBY3lmd@cluster0.q1zcxji.mongodb.net/lumosine?retryWrites=true&w=majority&appName=Cluster0';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'lumosine-super-secret-key-123';
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://benaabo6_db_user:gPTzCShFudohBSWo@ac-jsr0zus-shard-00-00.4qojaun.mongodb.net:27017,ac-jsr0zus-shard-00-01.4qojaun.mongodb.net:27017,ac-jsr0zus-shard-00-02.4qojaun.mongodb.net:27017/?ssl=true&replicaSet=atlas-hmedvh-shard-0&authSource=admin&retryWrites=true&w=majority&appName=Illuminati';
-
-let useFallback = false;
-const FALLBACK_DB_PATH = path.resolve('db_fallback.json');
-
-// --- Models ---
 const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
@@ -33,55 +25,11 @@ const RequirementSchema = new mongoose.Schema({
 const User = mongoose.model('User', UserSchema);
 const Requirement = mongoose.model('Requirement', RequirementSchema);
 
-// --- Fallback ---
-const getFallbackData = () => {
-  if (!fs.existsSync(FALLBACK_DB_PATH)) return { users: [], requirements: [], messages: [] };
-  try { return JSON.parse(fs.readFileSync(FALLBACK_DB_PATH, 'utf-8')); } catch (e) { return { users: [], requirements: [], messages: [] }; }
-};
-
-const saveFallbackData = (data) => fs.writeFileSync(FALLBACK_DB_PATH, JSON.stringify(data, null, 2));
-
-async function initFallbackSeeds() {
-  const data = getFallbackData();
-  if (data.users.length === 0) {
-    const hashedAdmin = await bcrypt.hash('admin', 10);
-    const hashedAgent = await bcrypt.hash('agent', 10);
-    const hashedMember = await bcrypt.hash('member', 10);
-    data.users.push(
-      { _id: 'admin_id', name: 'System Admin', email: 'admin@illuminati.ethiopia', password: hashedAdmin, role: 'admin', status: 'approved', balance: 0 },
-      { _id: 'agent_id', name: 'Alpha Agent', email: 'agent@illuminati.ethiopia', password: hashedAgent, role: 'agent', status: 'approved', balance: 15000 },
-      { _id: 'member_id', name: 'John Member', email: 'member@illuminati.ethiopia', password: hashedMember, role: 'member', status: 'approved', balance: 24500, assignedAgentId: 'agent_id' }
-    );
-    const coreReqs = ['Document Processing', 'Biometrics Legitimacy', 'First Income', 'Document Transaction to HQ', 'Payment'];
-    coreReqs.forEach((title, i) => {
-      data.requirements.push({ _id: `req_${i}`, memberId: 'member_id', title, progress: (i + 1) * 15, isCompleted: i === 0 });
-    });
-    saveFallbackData(data);
-  }
-}
-
-async function setupDb() {
-  try {
-    await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 });
-    console.log('Connected to MongoDB Atlas');
-  } catch (err) {
-    console.warn('Cloud connection failed. Using Local Fallback.');
-    useFallback = true;
-    await initFallbackSeeds();
-  }
-}
-
-setupDb();
-
 export default async function handler(req, res) {
-  // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -90,7 +38,7 @@ export default async function handler(req, res) {
 
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
-    res.status(405).end('Method Not Allowed');
+    res.status(405).json({ error: 'Method Not Allowed' });
     return;
   }
 
@@ -99,40 +47,28 @@ export default async function handler(req, res) {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    
+
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, JWT_SECRET);
-    
+
     if (decoded.role !== 'agent') {
-      return res.status(403).json({ error: 'Forbidden: Agent role required' });
+      return res.status(403).json({ error: 'Forbidden' });
     }
-    
-    if (useFallback) {
-      const data = getFallbackData();
-      const members = data.users.filter(u => u.role === 'member');
-      const result = members.map(m => ({
-        ...m,
-        id: m._id,
-        requirements: data.requirements.filter(r => r.memberId === m._id)
-      }));
-      return res.status(200).json(result);
-    }
-    
-    const members = await User.find({ role: 'member' });
+
+    await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 10000 });
+
+    const members = await User.find({ role: 'member' }).lean();
     const result = [];
-    
     for (let m of members) {
-      const reqs = await Requirement.find({ memberId: m._id });
-      result.push({ ...m.toObject(), id: m._id, requirements: reqs });
+      const reqs = await Requirement.find({ memberId: m._id }).lean();
+      result.push({ ...m, id: m._id.toString(), requirements: reqs });
     }
-    
     res.status(200).json(result);
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ error: 'Invalid token' });
     }
-    console.error('Get agent members error:', error);
+    console.error('Get members error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 }
-

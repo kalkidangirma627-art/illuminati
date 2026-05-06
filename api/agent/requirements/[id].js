@@ -24,8 +24,8 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
     res.status(405).json({ error: 'Method Not Allowed' });
     return;
   }
@@ -41,13 +41,14 @@ export default async function handler(req, res) {
 
     await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 10000 });
 
-    const reqs = await Requirement.find({ memberId: decoded.id }).lean();
-    res.status(200).json(reqs);
+    const { id } = req.query;
+    await Requirement.findByIdAndUpdate(id, req.body);
+    res.status(200).json({ message: 'ok' });
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ error: 'Invalid token' });
     }
-    console.error('Get requirements error:', error);
+    console.error('Update requirement error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 }
