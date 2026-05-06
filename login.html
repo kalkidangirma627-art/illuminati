@@ -127,9 +127,7 @@
  * API Connection Configuration
  * For Vercel deployment, we use relative URLs since the API is deployed alongside the frontend.
  */
-const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-  ? ''
-  : 'https://illuminati-production.up.railway.app';
+const API_BASE = '';
 
     // Clear old sessions to ensure the login form is always shown
     localStorage.clear();
