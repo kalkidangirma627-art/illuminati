@@ -10,12 +10,12 @@
       ]
     }
   ],
-  "rewrites": [
-    { "source": "/login", "destination": "/login.html" },
-    { "source": "/dashboard", "destination": "/dashboard.html" },
-    { "source": "/register", "destination": "/register.html" },
-    { "source": "/assets/(.*)", "destination": "/assets/$1" },
-    { "source": "/fonts/(.*)", "destination": "/fonts/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+  "routes": [
+    { "src": "/assets/(.*)", "dest": "/assets/$1", "continue": true },
+    { "src": "/fonts/(.*)", "dest": "/fonts/$1", "continue": true },
+    { "src": "/login", "dest": "/login.html" },
+    { "src": "/dashboard", "dest": "/dashboard.html" },
+    { "src": "/register", "dest": "/register.html" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
