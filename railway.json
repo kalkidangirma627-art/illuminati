@@ -8,7 +8,7 @@
     "healthcheckTimeout": 300
   },
   "variables": {
-    "NIXPACKS_NODE_VERSION": "20"
+    "NODE_VERSION": "20"
   },
   "phases": {
     "build": {
