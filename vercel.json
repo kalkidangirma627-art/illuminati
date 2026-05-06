@@ -14,6 +14,8 @@
     { "source": "/login", "destination": "/login.html" },
     { "source": "/dashboard", "destination": "/dashboard.html" },
     { "source": "/register", "destination": "/register.html" },
+    { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/fonts/(.*)", "destination": "/fonts/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
