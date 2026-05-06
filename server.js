@@ -123,27 +123,23 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+// --- Health check ---
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, useFallback, readyState: mongoose.connection.readyState });
+});
+
 // --- API ---
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log('Login attempt:', email, 'useFallback:', useFallback, 'mongoose.readyState:', mongoose.connection.readyState);
-    if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
-    let user;
-    if (useFallback) {
-      user = getFallbackData().users.find(u => u.email === email);
-    } else {
-      user = await User.findOne({ email }).lean();
-    }
-    if (!user) return res.status(400).json({ error: 'Invalid credentials' });
+    if (!email || !password) return res.json({ error: 'missing fields' });
+    const user = await User.findOne({ email }).lean();
+    if (!user) return res.json({ error: 'user not found' });
     const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(400).json({ error: 'Invalid credentials' });
-    const id = user._id ? user._id.toString() : user._id;
-    const token = jwt.sign({ id, email: user.email, role: user.role, name: user.name }, JWT_SECRET);
-    res.json({ token, user: { id, name: user.name, email: user.email, role: user.role } });
+    if (!match) return res.json({ error: 'bad password' });
+    res.json({ ok: true, email: user.email, role: user.role });
   } catch (err) {
-    console.error('Login error:', err.message, err.stack);
-    res.status(200).json({ error: 'LOGIN_FAIL: ' + err.message, stack: err.stack });
+    res.json({ error: 'EXCEPTION: ' + err.message });
   }
  });
 
