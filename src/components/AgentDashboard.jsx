@@ -23,7 +23,7 @@ export default function AgentDashboard({ onLogout }) {
 
   const fetchMembers = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/agent/members', {
+      const res = await fetch('https://illuminati-production.up.railway.app/api/agent/members', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -39,7 +39,7 @@ export default function AgentDashboard({ onLogout }) {
 
   const updateRequirement = async (reqId, payload) => {
     try {
-      await fetch(`http://localhost:3001/api/agent/requirements/${reqId}`, {
+      await fetch(`https://illuminati-production.up.railway.app/api/agent/requirements/${reqId}`, {
         method: 'POST',
         headers: { 
           Authorization: `Bearer ${token}`,

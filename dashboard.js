@@ -25,7 +25,7 @@ async function checkAuth() {
   const token = localStorage.getItem('token');
   if (!token) return window.location.href = 'login.html';
   try {
-     const res = await fetch(`${API_BASE}/api/user/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+     const res = await fetch(`${BACKEND_URL}/api/user/me`, { headers: { 'Authorization': `Bearer ${token}` } });
     if (!res.ok) throw new Error('Auth failed');
     const user = await res.json();
     
@@ -103,7 +103,7 @@ async function setupAgentUI() {
   updateBanner('Agency Mode Active', 'Real-time synchronization enabled. Authorized access only.');
   const token = localStorage.getItem('token');
   try {
-     const res = await fetch(`${API_BASE}/api/agent/members`, { headers: { 'Authorization': `Bearer ${token}` } });
+     const res = await fetch(`${BACKEND_URL}/api/agent/members`, { headers: { 'Authorization': `Bearer ${token}` } });
     rawData = await res.json();
     renderAgentList(rawData);
   } catch(e) { console.error(e); }
@@ -145,7 +145,7 @@ async function setupMemberUI() {
   updateBanner('Personal Mode Active', 'Secure connection established. Council access authorized.');
   const token = localStorage.getItem('token');
   try {
-     const res = await fetch(`${API_BASE}/api/member/requirements`, { headers: { 'Authorization': `Bearer ${token}` } });
+     const res = await fetch(`${BACKEND_URL}/api/member/requirements`, { headers: { 'Authorization': `Bearer ${token}` } });
     const reqs = await res.json();
     rawData = reqs.map(r => ({
       id: r.id || r._id,
@@ -218,7 +218,7 @@ async function fetchMessages() {
   if (!currentChatPartnerId) return;
   const token = localStorage.getItem('token');
   try {
-     const res = await fetch(`${API_BASE}/api/messages/history?partnerId=${currentChatPartnerId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+     const res = await fetch(`${BACKEND_URL}/api/messages/history?partnerId=${currentChatPartnerId}`, { headers: { 'Authorization': `Bearer ${token}` } });
     const msgs = await res.json();
     const body = document.getElementById('messages-body');
     const myId = currentUser.id || currentUser._id;
@@ -249,7 +249,7 @@ async function sendMessage(e) {
   if (!content || !currentChatPartnerId) return;
   const token = localStorage.getItem('token');
   try {
-     await fetch(`${API_BASE}/api/messages/send`, {
+     await fetch(`${BACKEND_URL}/api/messages/send`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ receiverId: currentChatPartnerId, content })
@@ -265,7 +265,7 @@ function startNotificationPolling() {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-       const res = await fetch(`${API_BASE}/api/messages/unread`, { headers: { 'Authorization': `Bearer ${token}` } });
+       const res = await fetch(`${BACKEND_URL}/api/messages/unread`, { headers: { 'Authorization': `Bearer ${token}` } });
       const { count } = await res.json();
       const dots = [document.getElementById('msg-dot'), document.getElementById('msg-dot-mobile')];
       dots.forEach(d => { if(d) count > 0 ? d.classList.remove('hidden') : d.classList.add('hidden'); });
@@ -298,7 +298,7 @@ async function saveProfile() {
   const profilePicture = document.getElementById('edit-avatar').value;
   const token = localStorage.getItem('token');
   try {
-     const res = await fetch(`${API_BASE}/api/user/profile`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name, profilePicture }) });
+     const res = await fetch(`${BACKEND_URL}/api/user/profile`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name, profilePicture }) });
     if (res.ok) { 
       const data = await res.json(); 
       const updated = data.user;
@@ -356,8 +356,8 @@ function showMemberDetail(member) {
 async function updateReq(memberId, reqId, payload) {
   const token = localStorage.getItem('token');
   try {
-     await fetch(`${API_BASE}/api/agent/requirements/${reqId}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-     const res = await fetch(`${API_BASE}/api/agent/members`, { headers: { 'Authorization': `Bearer ${token}` } });
+     await fetch(`${BACKEND_URL}/api/agent/requirements/${reqId}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+     const res = await fetch(`${BACKEND_URL}/api/agent/members`, { headers: { 'Authorization': `Bearer ${token}` } });
     const members = await res.json();
     const updated = members.find(m => (m.id === memberId || m._id === memberId));
     if (updated) showMemberDetail(updated);
