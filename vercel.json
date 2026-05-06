@@ -2,17 +2,8 @@
   "cleanUrls": true,
   "buildCommand": "",
   "outputDirectory": ".",
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-      ]
-    }
-  ],
   "routes": [
-    { "src": "/assets/(.*)", "dest": "/assets/$1", "continue": true },
-    { "src": "/fonts/(.*)", "dest": "/fonts/$1", "continue": true },
+    { "handle": "filesystem" },
     { "src": "/login", "dest": "/login.html" },
     { "src": "/dashboard", "dest": "/dashboard.html" },
     { "src": "/register", "dest": "/register.html" },
