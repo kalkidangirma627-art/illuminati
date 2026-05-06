@@ -6,307 +6,198 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+
 const PORT = process.env.PORT || 3001;
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-in-production';
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://fallback:fallback@localhost:27017/lumosine';
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/lumosine';
 
 let useFallback = false;
-const FALLBACK_DB_PATH = path.resolve('db_fallback.json');
 
-// --- Models ---
 const UserSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  role: { type: String, required: true },
-  status: { type: String, required: true },
-  assignedAgentId: { type: String },
-  balance: { type: Number, default: 0 },
-  profilePicture: { type: String, default: '' }
+  name: String, email: { type: String, unique: true }, password: String,
+  role: String, status: String, assignedAgentId: String,
+  balance: { type: Number, default: 0 }, profilePicture: { type: String, default: '' }
 });
-
 const RequirementSchema = new mongoose.Schema({
-  memberId: { type: String, required: true },
-  title: { type: String, required: true },
-  progress: { type: Number, default: 0 },
-  isCompleted: { type: Boolean, default: false }
+  memberId: String, title: String, progress: { type: Number, default: 0 }, isCompleted: { type: Boolean, default: false }
 });
-
 const MessageSchema = new mongoose.Schema({
-  senderId: { type: String, required: true },
-  receiverId: { type: String, required: true },
-  content: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now },
-  isRead: { type: Boolean, default: false }
+  senderId: String, receiverId: String, content: String,
+  timestamp: { type: Date, default: Date.now }, isRead: { type: Boolean, default: false }
 });
 
 const User = mongoose.model('User', UserSchema);
 const Requirement = mongoose.model('Requirement', RequirementSchema);
 const Message = mongoose.model('Message', MessageSchema);
 
-// --- Fallback ---
+const FALLBACK_DB_PATH = path.join(__dirname, 'db_fallback.json');
 const getFallbackData = () => {
-  if (!fs.existsSync(FALLBACK_DB_PATH)) return { users: [], requirements: [], messages: [] };
-  try { return JSON.parse(fs.readFileSync(FALLBACK_DB_PATH, 'utf-8')); } catch (e) { return { users: [], requirements: [], messages: [] }; }
+  try { return JSON.parse(fs.readFileSync(FALLBACK_DB_PATH, 'utf-8')); }
+  catch { return { users: [], requirements: [], messages: [] }; }
 };
-const saveFallbackData = (data) => fs.writeFileSync(FALLBACK_DB_PATH, JSON.stringify(data, null, 2));
+const saveFallbackData = (d) => fs.writeFileSync(FALLBACK_DB_PATH, JSON.stringify(d, null, 2));
 
 async function initFallbackSeeds() {
-  const data = getFallbackData();
-  if (data.users.length === 0) {
-    const hashedAdmin = await bcrypt.hash('admin', 10);
-    const hashedAgent = await bcrypt.hash('agent', 10);
-    const hashedMember = await bcrypt.hash('member', 10);
-    data.users.push(
-      { _id: 'admin_id', name: 'System Admin', email: 'admin@illuminati.ethiopia', password: hashedAdmin, role: 'admin', status: 'approved', balance: 0 },
-      { _id: 'agent_id', name: 'Alpha Agent', email: 'agent@illuminati.ethiopia', password: hashedAgent, role: 'agent', status: 'approved', balance: 15000 },
-      { _id: 'member_id', name: 'John Member', email: 'member@illuminati.ethiopia', password: hashedMember, role: 'member', status: 'approved', balance: 24500, assignedAgentId: 'agent_id' }
+  const d = getFallbackData();
+  if (!d.users.length) {
+    d.users.push(
+      { _id: 'admin_id', name: 'Admin', email: 'admin@illuminati.ethiopia', password: await bcrypt.hash('admin', 10), role: 'admin', status: 'approved', balance: 0 },
+      { _id: 'agent_id', name: 'Agent', email: 'agent@illuminati.ethiopia', password: await bcrypt.hash('agent', 10), role: 'agent', status: 'approved', balance: 15000 },
+      { _id: 'member_id', name: 'Member', email: 'member@illuminati.ethiopia', password: await bcrypt.hash('member', 10), role: 'member', status: 'approved', balance: 24500, assignedAgentId: 'agent_id' }
     );
-    const coreReqs = ['Document Processing', 'Biometrics Legitimacy', 'First Income', 'Document Transaction to HQ', 'Payment'];
-    coreReqs.forEach((title, i) => {
-      data.requirements.push({ _id: `req_${i}`, memberId: 'member_id', title, progress: (i + 1) * 15, isCompleted: i === 0 });
+    ['Doc Processing','Biometrics','First Income','Doc Transaction','Payment'].forEach((t, i) => {
+      d.requirements.push({ _id: `req_${i}`, memberId: 'member_id', title: t, progress: (i+1)*15, isCompleted: i===0 });
     });
-    saveFallbackData(data);
+    saveFallbackData(d);
   }
 }
 
 async function setupDb() {
   try {
-    await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 10000, socketTimeoutMS: 45000 });
-    console.log('Connected to MongoDB Atlas');
+    await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 10000 });
     useFallback = false;
+    console.log('MongoDB connected');
   } catch (err) {
-    console.error('MongoDB connection error:', err.message);
-    console.warn('Cloud connection failed. Using Local Fallback.');
+    console.error('MongoDB failed:', err.message);
     useFallback = true;
     await initFallbackSeeds();
   }
 }
 setupDb();
 
-mongoose.connection.on('disconnected', () => {
-  console.warn('MongoDB disconnected. Switching to Local Fallback.');
-  useFallback = true;
-});
+mongoose.connection.on('disconnected', () => { useFallback = true; });
+mongoose.connection.on('reconnected', () => { useFallback = false; });
 
-mongoose.connection.on('error', (err) => {
-  console.error('MongoDB connection error:', err.message);
-  useFallback = true;
-});
-
-mongoose.connection.on('reconnected', () => {
-  console.log('MongoDB reconnected.');
-  useFallback = false;
-});
-
-const authenticateToken = (req, res, next) => {
-  const token = req.headers['authorization']?.split(' ')[1];
-  if (!token) return res.sendStatus(401);
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
-    req.user = user;
-    next();
-  });
+const auth = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  try { req.user = jwt.verify(token, JWT_SECRET); next(); }
+  catch { return res.status(403).json({ error: 'Invalid token' }); }
 };
 
-// --- Health check ---
-app.get('/api/health', (req, res) => {
-  res.json({ ok: true, useFallback, readyState: mongoose.connection.readyState });
-});
-
-// --- API ---
-app.post('/api/auth/login', (req, res) => {
-  let raw = '';
-  req.on('data', chunk => raw += chunk);
-  req.on('end', () => {
-    res.json({ raw, length: raw.length });
-  });
-  req.on('error', err => {
-    res.json({ error: err.message });
-  });
- });
+app.get('/api/health', (_, res) => res.json({ ok: true, useFallback, db: mongoose.connection.readyState }));
 
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ error: 'All fields are required' });
-    }
-    if (!['member', 'agent'].includes(role)) {
-      return res.status(400).json({ error: 'Invalid role. Must be member or agent' });
-    }
+    const { name, email, password, role } = req.body || {};
+    if (!name || !email || !password || !role) return res.status(400).json({ error: 'All fields required' });
+    if (!['member','agent'].includes(role)) return res.status(400).json({ error: 'Invalid role' });
     if (useFallback) {
-      const data = getFallbackData();
-      if (data.users.find(u => u.email === email)) {
-        return res.status(400).json({ error: 'User with this email already exists' });
-      }
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const newId = 'user_' + Date.now().toString();
-      data.users.push({ _id: newId, name, email, password: hashedPassword, role, status: 'approved', balance: 0, profilePicture: '' });
-      saveFallbackData(data);
-      const token = jwt.sign({ id: newId, email, role, name }, JWT_SECRET);
-      return res.status(201).json({ token, user: { id: newId, name, email, role } });
+      const d = getFallbackData();
+      if (d.users.find(u => u.email === email)) return res.status(400).json({ error: 'Email exists' });
+      const u = { _id: 'u_'+Date.now(), name, email, password: await bcrypt.hash(password,10), role, status:'approved', balance:0, profilePicture:'' };
+      d.users.push(u); saveFallbackData(d);
+      return res.status(201).json({ token: jwt.sign({id:u._id,email,role,name}, JWT_SECRET), user:{id:u._id,name,email,role} });
     }
-    const existingUser = await User.findOne({ email }).lean();
-    if (existingUser) {
-      return res.status(400).json({ error: 'User with this email already exists' });
-    }
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ name, email, password: hashedPassword, role, status: 'approved', balance: 0, profilePicture: '' });
-    const savedUser = await newUser.save();
-    const token = jwt.sign({ id: savedUser._id.toString(), email: savedUser.email, role: savedUser.role, name: savedUser.name }, JWT_SECRET);
-    res.status(201).json({ token, user: { id: savedUser._id.toString(), name: savedUser.name, email: savedUser.email, role: savedUser.role } });
-  } catch (err) {
-    console.error('Registration error:', err.message, err.stack);
-    res.status(500).json({ error: 'Registration failed', detail: err.message });
-  }
- });
-
-app.get('/api/user/me', authenticateToken, async (req, res) => {
-  try {
-    let u;
-    if (useFallback) {
-      u = getFallbackData().users.find(u => u._id === req.user.id);
-    } else {
-      u = await User.findById(req.user.id).select('-password').lean();
-    }
-    if (!u) return res.status(404).json({ error: 'User not found' });
-    res.json(u);
-  } catch (err) {
-    console.error('Get user error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+    if (await User.findOne({email}).lean()) return res.status(400).json({ error: 'Email exists' });
+    const u = await new User({ name, email, password: await bcrypt.hash(password,10), role, status:'approved', balance:0, profilePicture:'' }).save();
+    res.status(201).json({ token: jwt.sign({id:u._id.toString(),email:u.email,role:u.role,name:u.name}, JWT_SECRET), user:{id:u._id.toString(),name:u.name,email:u.email,role:u.role} });
+  } catch(e) { console.error('Register:', e.message); res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/user/profile', authenticateToken, async (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   try {
-    const { name, profilePicture } = req.body;
+    const { email, password } = req.body || {};
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    const user = useFallback ? getFallbackData().users.find(u => u.email === email) : await User.findOne({email}).lean();
+    if (!user || !await bcrypt.compare(password, user.password)) return res.status(400).json({ error: 'Invalid credentials' });
+    const id = user._id?.toString?.() || user._id;
+    res.json({ token: jwt.sign({id,email:user.email,role:user.role,name:user.name}, JWT_SECRET), user:{id,name:user.name,email:user.email,role:user.role} });
+  } catch(e) { console.error('Login:', e.message); res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/user/me', auth, async (req, res) => {
+  try {
+    const u = useFallback ? getFallbackData().users.find(u => u._id === req.user.id) : await User.findById(req.user.id).select('-password').lean();
+    if (!u) return res.status(404).json({ error: 'Not found' });
+    res.json(u);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/user/profile', auth, async (req, res) => {
+  try {
+    const { name, profilePicture } = req.body || {};
     if (useFallback) {
-      const data = getFallbackData();
-      const idx = data.users.findIndex(u => u._id === req.user.id);
-      if (idx !== -1) {
-        if (name) data.users[idx].name = name;
-        if (profilePicture !== undefined) data.users[idx].profilePicture = profilePicture;
-        saveFallbackData(data);
-        return res.json({ user: data.users[idx] });
-      }
-      return res.status(404).json({ error: 'User not found' });
+      const d = getFallbackData(); const i = d.users.findIndex(u => u._id === req.user.id);
+      if (i===-1) return res.status(404).json({ error: 'Not found' });
+      if (name) d.users[i].name = name;
+      if (profilePicture !== undefined) d.users[i].profilePicture = profilePicture;
+      saveFallbackData(d); return res.json({ user: d.users[i] });
     }
     const u = await User.findByIdAndUpdate(req.user.id, { name, profilePicture }, { new: true }).lean();
-    if (!u) return res.status(404).json({ error: 'User not found' });
     res.json({ user: u });
-  } catch (err) {
-    console.error('Profile update error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/agent/members', authenticateToken, async (req, res) => {
+app.get('/api/agent/members', auth, async (req, res) => {
   try {
-    if (req.user.role !== 'agent') return res.sendStatus(403);
+    if (req.user.role !== 'agent') return res.status(403).json({ error: 'Forbidden' });
     if (useFallback) {
-      const data = getFallbackData();
-      const members = data.users.filter(u => u.role === 'member');
-      return res.json(members.map(m => ({ ...m, id: m._id, requirements: data.requirements.filter(r => r.memberId === m._id) })));
+      const d = getFallbackData();
+      return res.json(d.users.filter(u => u.role==='member').map(m => ({...m, requirements: d.requirements.filter(r => r.memberId===m._id)})));
     }
-    const members = await User.find({ role: 'member' }).lean();
-    const result = [];
-    for (let m of members) {
-      const reqs = await Requirement.find({ memberId: m._id }).lean();
-      result.push({ ...m, id: m._id.toString(), requirements: reqs });
-    }
-    res.json(result);
-  } catch (err) {
-    console.error('Get members error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+    const members = await User.find({role:'member'}).lean();
+    res.json(await Promise.all(members.map(async m => ({...m, id:m._id.toString(), requirements: await Requirement.find({memberId:m._id}).lean()}))));
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/agent/requirements/:id', authenticateToken, async (req, res) => {
+app.post('/api/agent/requirements/:id', auth, async (req, res) => {
   try {
-    if (useFallback) {
-      const data = getFallbackData();
-      const idx = data.requirements.findIndex(r => r._id === req.params.id);
-      if (idx !== -1) { data.requirements[idx] = { ...data.requirements[idx], ...req.body }; saveFallbackData(data); }
-      return res.json({ message: 'ok' });
-    }
+    if (useFallback) { const d=getFallbackData(); const i=d.requirements.findIndex(r=>r._id===req.params.id); if(i!==-1){d.requirements[i]={...d.requirements[i],...req.body};saveFallbackData(d);} return res.json({message:'ok'}); }
     await Requirement.findByIdAndUpdate(req.params.id, req.body);
-    res.json({ message: 'ok' });
-  } catch (err) {
-    console.error('Update requirement error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+    res.json({message:'ok'});
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/member/requirements', authenticateToken, async (req, res) => {
+app.get('/api/member/requirements', auth, async (req, res) => {
   try {
-    if (useFallback) return res.json(getFallbackData().requirements.filter(r => r.memberId === req.user.id));
-    const reqs = await Requirement.find({ memberId: req.user.id }).lean();
-    res.json(reqs);
-  } catch (err) {
-    console.error('Get requirements error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+    if (useFallback) return res.json(getFallbackData().requirements.filter(r => r.memberId===req.user.id));
+    res.json(await Requirement.find({memberId:req.user.id}).lean());
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- MESSAGING ---
-app.get('/api/messages/history', authenticateToken, async (req, res) => {
+app.get('/api/messages/history', auth, async (req, res) => {
   try {
-    const { partnerId } = req.query;
+    const pid = req.query.partnerId;
     if (useFallback) {
-      const data = getFallbackData();
-      const msgs = data.messages.filter(m => (m.senderId === req.user.id && m.receiverId === partnerId) || (m.senderId === partnerId && m.receiverId === req.user.id));
-      return res.json(msgs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)));
+      const msgs = getFallbackData().messages.filter(m=>(m.senderId===req.user.id&&m.receiverId===pid)||(m.senderId===pid&&m.receiverId===req.user.id));
+      return res.json(msgs.sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp)));
     }
-    const msgs = await Message.find({ $or: [{ senderId: req.user.id, receiverId: partnerId }, { senderId: partnerId, receiverId: req.user.id }] }).sort('timestamp').lean();
-    res.json(msgs);
-  } catch (err) {
-    console.error('Get messages error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+    res.json(await Message.find({$or:[{senderId:req.user.id,receiverId:pid},{senderId:pid,receiverId:req.user.id}]}).sort('timestamp').lean());
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/messages/send', authenticateToken, async (req, res) => {
+app.post('/api/messages/send', auth, async (req, res) => {
   try {
-    const { receiverId, content } = req.body;
-    if (!receiverId || !content) return res.status(400).json({ error: 'Receiver and content are required' });
+    const { receiverId, content } = req.body || {};
+    if (!receiverId || !content) return res.status(400).json({ error: 'Receiver and content required' });
     if (useFallback) {
-      const data = getFallbackData();
-      const msg = { senderId: req.user.id, receiverId, content, timestamp: new Date(), isRead: false, _id: Date.now().toString() };
-      data.messages.push(msg);
-      saveFallbackData(data);
+      const msg = { senderId:req.user.id, receiverId, content, timestamp:new Date(), isRead:false, _id:Date.now().toString() };
+      const d=getFallbackData(); d.messages.push(msg); saveFallbackData(d);
       return res.json(msg);
     }
-    const newMsg = new Message({ senderId: req.user.id, receiverId, content, timestamp: new Date(), isRead: false });
-    const saved = await newMsg.save();
-    res.json(saved.toObject());
-  } catch (err) {
-    console.error('Send message error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+    res.json((await new Message({senderId:req.user.id,receiverId,content,timestamp:new Date(),isRead:false}).save()).toObject());
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/messages/unread', authenticateToken, async (req, res) => {
+app.get('/api/messages/unread', auth, async (req, res) => {
   try {
-    if (useFallback) return res.json({ count: getFallbackData().messages.filter(m => m.receiverId === req.user.id && !m.isRead).length });
-    const count = await Message.countDocuments({ receiverId: req.user.id, isRead: false });
-    res.json({ count });
-  } catch (err) {
-    console.error('Get unread count error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+    if (useFallback) return res.json({count:getFallbackData().messages.filter(m=>m.receiverId===req.user.id&&!m.isRead).length});
+    res.json({count:await Message.countDocuments({receiverId:req.user.id,isRead:false})});
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error' });
-});
+app.use(express.static(__dirname));
+app.get('*', (_, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
