@@ -1,0 +1,63 @@
+# Ignore git-related files
+.git
+.gitignore
+
+# Ignore Node.js modules (they'll be installed on Vercel)
+node_modules
+
+# Ignore environment files
+.env
+.env.local
+.env.development
+.env.production
+
+# Ignore logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Ignore runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Ignore coverage directory used by jest
+coverage
+.lcov*
+
+# Ignore compiled files
+build/
+dist/
+tmp/
+
+# Ignore miscellaneous
+.DS_Store
+Thumbs.db
+
+# Ignore backup files
+*~
+*.bak
+*.swp
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Ignore documentation (if not needed for production)
+README.md
+CHANGELOG.md
+LICENSE
+
+# Ignore test files
+__tests__/
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Ignore fallback data (will be created on Vercel if needed)
+db_fallback.json

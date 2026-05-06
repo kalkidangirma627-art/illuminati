@@ -1,21 +1,25 @@
 {
-    "cleanUrls": true,
-    "rewrites": [
-        {
-            "source": "/login",
-            "destination": "/login.html"
-        },
-        {
-            "source": "/dashboard",
-            "destination": "/dashboard.html"
-        },
-        {
-            "source": "/register",
-            "destination": "/register.html"
-        },
-        {
-            "source": "/(.*)",
-            "destination": "/index.html"
-        }
-    ]
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/login",
+      "destination": "/login.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/dashboard.html"
+    },
+    {
+      "source": "/register",
+      "destination": "/register.html"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }

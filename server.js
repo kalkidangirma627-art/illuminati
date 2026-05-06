@@ -10,12 +10,20 @@ import path from 'path';
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://your-frontend-domain.vercel.app'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
-const JWT_SECRET = process.env.JWT_SECRET || 'lumosine-super-secret-key-123';
-const MONGO_URI = 'mongodb://benaabo6_db_user:gPTzCShFudohBSWo@ac-jsr0zus-shard-00-00.4qojaun.mongodb.net:27017,ac-jsr0zus-shard-00-01.4qojaun.mongodb.net:27017,ac-jsr0zus-shard-00-02.4qojaun.mongodb.net:27017/?ssl=true&replicaSet=atlas-hmedvh-shard-0&authSource=admin&retryWrites=true&w=majority&appName=Illuminati';
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-in-production';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://fallback:fallback@localhost:27017/lumosine';
 
 let useFallback = false;
 const FALLBACK_DB_PATH = path.resolve('db_fallback.json');
@@ -79,9 +87,10 @@ async function initFallbackSeeds() {
 
 async function setupDb() {
   try {
-    await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 });
+    await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 10000, socketTimeoutMS: 45000 });
     console.log('Connected to MongoDB Atlas');
   } catch (err) {
+    console.error('MongoDB connection error:', err.message);
     console.warn('Cloud connection failed. Using Local Fallback.');
     useFallback = true;
     await initFallbackSeeds();
@@ -201,4 +210,4 @@ app.get('/api/messages/unread', authenticateToken, async (req, res) => {
   res.json({ count });
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
