@@ -103,7 +103,7 @@ async function setupAgentUI() {
   updateBanner('Agency Mode Active', 'Real-time synchronization enabled. Authorized access only.');
   const token = localStorage.getItem('token');
   try {
-    const res = await fetch('/api/agent/members', { headers: { 'Authorization': `Bearer ${token}` } });
+     const res = await fetch(`${API_BASE}/api/agent/members`, { headers: { 'Authorization': `Bearer ${token}` } });
     rawData = await res.json();
     renderAgentList(rawData);
   } catch(e) { console.error(e); }
