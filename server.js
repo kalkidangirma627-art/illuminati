@@ -131,13 +131,8 @@ app.get('/api/health', (req, res) => {
 // --- API ---
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) return res.json({ error: 'missing fields' });
-    const user = await User.findOne({ email }).lean();
-    if (!user) return res.json({ error: 'user not found' });
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.json({ error: 'bad password' });
-    res.json({ ok: true, email: user.email, role: user.role });
+    const body = req.body;
+    res.json({ received: body, type: typeof body, keys: body ? Object.keys(body) : null });
   } catch (err) {
     res.json({ error: 'EXCEPTION: ' + err.message });
   }
