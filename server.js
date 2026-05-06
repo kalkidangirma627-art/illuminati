@@ -15,7 +15,7 @@ app.use(cors({
     'http://localhost:5173',
     'http://localhost:3000',
     'http://localhost:3001',
-    'https://your-frontend-domain.vercel.app'
+    'https://illuminati-pi.vercel.app'
   ],
   credentials: true
 }));
