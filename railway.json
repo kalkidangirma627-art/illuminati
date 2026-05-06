@@ -3,12 +3,16 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "node server.js",
+    "startCommand": "npm run railway:start",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 300
   },
   "variables": {
-    "NIXPACKS_NODE_VERSION": "20",
-    "NIXPACKS_BUILD_CMD": "echo 'Backend only - no build needed'"
+    "NIXPACKS_NODE_VERSION": "20"
+  },
+  "phases": {
+    "build": {
+      "cmds": ["echo 'Skipping build for backend deployment'"]
+    }
   }
 }

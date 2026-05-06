@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "start:all": "concurrently \"npm run dev\" \"node server.js\"",
-    "start": "node server.js"
+    "start": "node server.js",
+    "railway:start": "node server.js"
   },
   "dependencies": {
     "@studio-freight/lenis": "^1.0.42",
