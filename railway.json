@@ -6,5 +6,8 @@
     "startCommand": "npm start",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 300
+  },
+  "variables": {
+    "NIXPACKS_NODE_VERSION": "20"
   }
 }
