@@ -20,8 +20,6 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
-app.use(express.static('.', { index: 'index.html' }));
-
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-in-production';
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://fallback:fallback@localhost:27017/lumosine';
@@ -323,11 +321,6 @@ app.get('/api/messages/unread', authenticateToken, async (req, res) => {
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ error: 'Internal server error' });
-});
-
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/')) return next();
-  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
