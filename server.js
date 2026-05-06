@@ -10,16 +10,9 @@ import path from 'path';
 dotenv.config();
 
 const app = express();
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'https://illuminati-pi.vercel.app'
-  ],
-  credentials: true
-}));
-app.use(express.json());
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-in-production';
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://fallback:fallback@localhost:27017/lumosine';
