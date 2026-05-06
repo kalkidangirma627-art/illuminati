@@ -89,6 +89,7 @@ async function setupDb() {
   try {
     await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 10000, socketTimeoutMS: 45000 });
     console.log('Connected to MongoDB Atlas');
+    useFallback = false;
   } catch (err) {
     console.error('MongoDB connection error:', err.message);
     console.warn('Cloud connection failed. Using Local Fallback.');
@@ -97,6 +98,21 @@ async function setupDb() {
   }
 }
 setupDb();
+
+mongoose.connection.on('disconnected', () => {
+  console.warn('MongoDB disconnected. Switching to Local Fallback.');
+  useFallback = true;
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err.message);
+  useFallback = true;
+});
+
+mongoose.connection.on('reconnected', () => {
+  console.log('MongoDB reconnected.');
+  useFallback = false;
+});
 
 const authenticateToken = (req, res, next) => {
   const token = req.headers['authorization']?.split(' ')[1];
@@ -110,156 +126,200 @@ const authenticateToken = (req, res, next) => {
 
 // --- API ---
 app.post('/api/auth/login', async (req, res) => {
-   const { email, password } = req.body;
-   const findUser = async () => {
-     if (useFallback) return getFallbackData().users.find(u => u.email === email);
-     return await User.findOne({ email });
-   };
-   const user = await findUser();
-   if (!user || !(await bcrypt.compare(password, user.password))) return res.status(400).json({ error: 'Invalid credentials' });
-   const token = jwt.sign({ id: user._id, email: user.email, role: user.role, name: user.name }, JWT_SECRET);
-   res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
+    let user;
+    if (useFallback) {
+      user = getFallbackData().users.find(u => u.email === email);
+    } else {
+      user = await User.findOne({ email }).lean();
+    }
+    if (!user) return res.status(400).json({ error: 'Invalid credentials' });
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(400).json({ error: 'Invalid credentials' });
+    const token = jwt.sign({ id: user._id.toString(), email: user.email, role: user.role, name: user.name }, JWT_SECRET);
+    res.json({ token, user: { id: user._id.toString(), name: user.name, email: user.email, role: user.role } });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
  });
 
 app.post('/api/auth/register', async (req, res) => {
-   const { name, email, password, role } = req.body;
-   // Basic validation
-   if (!name || !email || !password || !role) {
-     return res.status(400).json({ error: 'All fields are required' });
-   }
-   if (!['member', 'agent'].includes(role)) {
-     return res.status(400).json({ error: 'Invalid role. Must be member or agent' });
-   }
-
-   try {
-     // Check if user already exists
-     const existingUser = await User.findOne({ email });
-     if (existingUser) {
-       return res.status(400).json({ error: 'User with this email already exists' });
-     }
-
-     // Hash password
-     const hashedPassword = await bcrypt.hash(password, 10);
-
-     // Create new user
-     const newUser = new User({
-       name,
-       email,
-       password: hashedPassword,
-       role,
-       status: 'approved', // Auto-approve for simplicity
-       balance: 0,
-       profilePicture: ''
-     });
-
-     // Save user
-     const savedUser = await newUser.save();
-
-     // Generate JWT token
-     const token = jwt.sign({ id: savedUser._id, email: savedUser.email, role: savedUser.role, name: savedUser.name }, JWT_SECRET);
-
-     res.status(201).json({ 
-       token, 
-       user: { 
-         id: savedUser._id, 
-         name: savedUser.name, 
-         email: savedUser.email, 
-         role: savedUser.role 
-       } 
-     });
-   } catch (err) {
-     console.error('Registration error:', err);
-     res.status(500).json({ error: 'Registration failed' });
-   }
+  try {
+    const { name, email, password, role } = req.body;
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+    if (!['member', 'agent'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role. Must be member or agent' });
+    }
+    if (useFallback) {
+      const data = getFallbackData();
+      if (data.users.find(u => u.email === email)) {
+        return res.status(400).json({ error: 'User with this email already exists' });
+      }
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newId = 'user_' + Date.now().toString();
+      data.users.push({ _id: newId, name, email, password: hashedPassword, role, status: 'approved', balance: 0, profilePicture: '' });
+      saveFallbackData(data);
+      const token = jwt.sign({ id: newId, email, role, name }, JWT_SECRET);
+      return res.status(201).json({ token, user: { id: newId, name, email, role } });
+    }
+    const existingUser = await User.findOne({ email }).lean();
+    if (existingUser) {
+      return res.status(400).json({ error: 'User with this email already exists' });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ name, email, password: hashedPassword, role, status: 'approved', balance: 0, profilePicture: '' });
+    const savedUser = await newUser.save();
+    const token = jwt.sign({ id: savedUser._id.toString(), email: savedUser.email, role: savedUser.role, name: savedUser.name }, JWT_SECRET);
+    res.status(201).json({ token, user: { id: savedUser._id.toString(), name: savedUser.name, email: savedUser.email, role: savedUser.role } });
+  } catch (err) {
+    console.error('Registration error:', err);
+    res.status(500).json({ error: 'Registration failed' });
+  }
  });
 
 app.get('/api/user/me', authenticateToken, async (req, res) => {
-  if (useFallback) {
-    const u = getFallbackData().users.find(u => u._id === req.user.id);
-    return res.json(u);
+  try {
+    let u;
+    if (useFallback) {
+      u = getFallbackData().users.find(u => u._id === req.user.id);
+    } else {
+      u = await User.findById(req.user.id).select('-password').lean();
+    }
+    if (!u) return res.status(404).json({ error: 'User not found' });
+    res.json(u);
+  } catch (err) {
+    console.error('Get user error:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  const u = await User.findById(req.user.id).select('-password');
-  res.json(u);
 });
 
 app.post('/api/user/profile', authenticateToken, async (req, res) => {
-  const { name, profilePicture } = req.body;
-  if (useFallback) {
-    const data = getFallbackData();
-    const idx = data.users.findIndex(u => u._id === req.user.id);
-    if (idx !== -1) {
-      if (name) data.users[idx].name = name;
-      if (profilePicture !== undefined) data.users[idx].profilePicture = profilePicture;
-      saveFallbackData(data);
-      return res.json({ user: data.users[idx] });
+  try {
+    const { name, profilePicture } = req.body;
+    if (useFallback) {
+      const data = getFallbackData();
+      const idx = data.users.findIndex(u => u._id === req.user.id);
+      if (idx !== -1) {
+        if (name) data.users[idx].name = name;
+        if (profilePicture !== undefined) data.users[idx].profilePicture = profilePicture;
+        saveFallbackData(data);
+        return res.json({ user: data.users[idx] });
+      }
+      return res.status(404).json({ error: 'User not found' });
     }
+    const u = await User.findByIdAndUpdate(req.user.id, { name, profilePicture }, { new: true }).lean();
+    if (!u) return res.status(404).json({ error: 'User not found' });
+    res.json({ user: u });
+  } catch (err) {
+    console.error('Profile update error:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  const u = await User.findByIdAndUpdate(req.user.id, { name, profilePicture }, { new: true });
-  res.json({ user: u });
 });
 
 app.get('/api/agent/members', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'agent') return res.sendStatus(403);
-  if (useFallback) {
-    const data = getFallbackData();
-    const members = data.users.filter(u => u.role === 'member');
-    return res.json(members.map(m => ({ ...m, id: m._id, requirements: data.requirements.filter(r => r.memberId === m._id) })));
+  try {
+    if (req.user.role !== 'agent') return res.sendStatus(403);
+    if (useFallback) {
+      const data = getFallbackData();
+      const members = data.users.filter(u => u.role === 'member');
+      return res.json(members.map(m => ({ ...m, id: m._id, requirements: data.requirements.filter(r => r.memberId === m._id) })));
+    }
+    const members = await User.find({ role: 'member' }).lean();
+    const result = [];
+    for (let m of members) {
+      const reqs = await Requirement.find({ memberId: m._id }).lean();
+      result.push({ ...m, id: m._id.toString(), requirements: reqs });
+    }
+    res.json(result);
+  } catch (err) {
+    console.error('Get members error:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  const members = await User.find({ role: 'member' });
-  const result = [];
-  for (let m of members) {
-    const reqs = await Requirement.find({ memberId: m._id });
-    result.push({ ...m.toObject(), id: m._id, requirements: reqs });
-  }
-  res.json(result);
 });
 
 app.post('/api/agent/requirements/:id', authenticateToken, async (req, res) => {
-  if (useFallback) {
-    const data = getFallbackData();
-    const idx = data.requirements.findIndex(r => r._id === req.params.id);
-    if (idx !== -1) { data.requirements[idx] = { ...data.requirements[idx], ...req.body }; saveFallbackData(data); }
-    return res.json({ message: 'ok' });
+  try {
+    if (useFallback) {
+      const data = getFallbackData();
+      const idx = data.requirements.findIndex(r => r._id === req.params.id);
+      if (idx !== -1) { data.requirements[idx] = { ...data.requirements[idx], ...req.body }; saveFallbackData(data); }
+      return res.json({ message: 'ok' });
+    }
+    await Requirement.findByIdAndUpdate(req.params.id, req.body);
+    res.json({ message: 'ok' });
+  } catch (err) {
+    console.error('Update requirement error:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  await Requirement.findByIdAndUpdate(req.params.id, req.body);
-  res.json({ message: 'ok' });
 });
 
 app.get('/api/member/requirements', authenticateToken, async (req, res) => {
-  if (useFallback) return res.json(getFallbackData().requirements.filter(r => r.memberId === req.user.id));
-  res.json(await Requirement.find({ memberId: req.user.id }));
+  try {
+    if (useFallback) return res.json(getFallbackData().requirements.filter(r => r.memberId === req.user.id));
+    const reqs = await Requirement.find({ memberId: req.user.id }).lean();
+    res.json(reqs);
+  } catch (err) {
+    console.error('Get requirements error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // --- MESSAGING ---
 app.get('/api/messages/history', authenticateToken, async (req, res) => {
-  const { partnerId } = req.query;
-  if (useFallback) {
-    const data = getFallbackData();
-    const msgs = data.messages.filter(m => (m.senderId === req.user.id && m.receiverId === partnerId) || (m.senderId === partnerId && m.receiverId === req.user.id));
-    return res.json(msgs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)));
+  try {
+    const { partnerId } = req.query;
+    if (useFallback) {
+      const data = getFallbackData();
+      const msgs = data.messages.filter(m => (m.senderId === req.user.id && m.receiverId === partnerId) || (m.senderId === partnerId && m.receiverId === req.user.id));
+      return res.json(msgs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)));
+    }
+    const msgs = await Message.find({ $or: [{ senderId: req.user.id, receiverId: partnerId }, { senderId: partnerId, receiverId: req.user.id }] }).sort('timestamp').lean();
+    res.json(msgs);
+  } catch (err) {
+    console.error('Get messages error:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  const msgs = await Message.find({ $or: [{ senderId: req.user.id, receiverId: partnerId }, { senderId: partnerId, receiverId: req.user.id }] }).sort('timestamp');
-  res.json(msgs);
 });
 
 app.post('/api/messages/send', authenticateToken, async (req, res) => {
-  const { receiverId, content } = req.body;
-  const msg = { senderId: req.user.id, receiverId, content, timestamp: new Date(), isRead: false };
-  if (useFallback) {
-    const data = getFallbackData();
-    data.messages.push({ ...msg, _id: Date.now().toString() });
-    saveFallbackData(data);
-    return res.json(msg);
+  try {
+    const { receiverId, content } = req.body;
+    if (!receiverId || !content) return res.status(400).json({ error: 'Receiver and content are required' });
+    if (useFallback) {
+      const data = getFallbackData();
+      const msg = { senderId: req.user.id, receiverId, content, timestamp: new Date(), isRead: false, _id: Date.now().toString() };
+      data.messages.push(msg);
+      saveFallbackData(data);
+      return res.json(msg);
+    }
+    const newMsg = new Message({ senderId: req.user.id, receiverId, content, timestamp: new Date(), isRead: false });
+    const saved = await newMsg.save();
+    res.json(saved.toObject());
+  } catch (err) {
+    console.error('Send message error:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  const newMsg = new Message(msg);
-  await newMsg.save();
-  res.json(newMsg);
 });
 
 app.get('/api/messages/unread', authenticateToken, async (req, res) => {
-  if (useFallback) return res.json({ count: getFallbackData().messages.filter(m => m.receiverId === req.user.id && !m.isRead).length });
-  const count = await Message.countDocuments({ receiverId: req.user.id, isRead: false });
-  res.json({ count });
+  try {
+    if (useFallback) return res.json({ count: getFallbackData().messages.filter(m => m.receiverId === req.user.id && !m.isRead).length });
+    const count = await Message.countDocuments({ receiverId: req.user.id, isRead: false });
+    res.json({ count });
+  } catch (err) {
+    console.error('Get unread count error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
