@@ -129,6 +129,7 @@ const authenticateToken = (req, res, next) => {
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log('Login attempt:', email, 'useFallback:', useFallback, 'mongoose.readyState:', mongoose.connection.readyState);
     if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
     let user;
     if (useFallback) {
@@ -139,11 +140,12 @@ app.post('/api/auth/login', async (req, res) => {
     if (!user) return res.status(400).json({ error: 'Invalid credentials' });
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(400).json({ error: 'Invalid credentials' });
-    const token = jwt.sign({ id: user._id.toString(), email: user.email, role: user.role, name: user.name }, JWT_SECRET);
-    res.json({ token, user: { id: user._id.toString(), name: user.name, email: user.email, role: user.role } });
+    const id = user._id ? user._id.toString() : user._id;
+    const token = jwt.sign({ id, email: user.email, role: user.role, name: user.name }, JWT_SECRET);
+    res.json({ token, user: { id, name: user.name, email: user.email, role: user.role } });
   } catch (err) {
     console.error('Login error:', err.message, err.stack);
-    res.status(500).json({ error: 'Internal server error', detail: err.message });
+    res.status(500).json({ error: 'Login failed: ' + err.message });
   }
  });
 
