@@ -10,7 +10,7 @@ const IGNORE = new Set([
   'Dockerfile', 'build.js', 'updateHtml.js', 'rebrand.cjs', 'rebrand-about.cjs',
   'new_loader.txt', 'temp_loader.txt', 'finland.txt', 'README.md',
   'package.json', 'package-lock.json', 'vite.config.js', 'eslint.config.js',
-  'dashboard.css', 'dashboard.js', 'Dashboard.png', '17.04.2026_09.07.35_REC.mp4',
+  'dashboard.css', 'Dashboard.png', '17.04.2026_09.07.35_REC.mp4',
   '.dockerignore', '.gitignore', '.vercelignore'
 ]);
 
