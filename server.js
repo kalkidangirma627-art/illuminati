@@ -285,6 +285,79 @@ app.get('/api/member/requirements', authenticate, requireRole('member'), async (
   }
 });
 
+app.get('/api/admin/users', authenticate, requireRole('admin'), async (req, res) => {
+  try {
+    const users = await User.find().select('-password');
+    const usersWithRequirements = await Promise.all(
+      users.map(async (user) => {
+        const requirements = await Requirement.find({ memberId: user._id.toString() });
+        return { ...user.toObject(), id: user._id.toString(), requirements };
+      })
+    );
+    res.json(usersWithRequirements);
+  } catch (err) {
+    console.error('Get admin users error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/admin/approve/:id', authenticate, requireRole('admin'), async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, { status: 'approved' }, { new: true }).select('-password');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({ message: 'User approved', user: { ...user.toObject(), id: user._id.toString() } });
+  } catch (err) {
+    console.error('Approve user error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/admin/reject/:id', authenticate, requireRole('admin'), async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, { status: 'rejected' }, { new: true }).select('-password');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({ message: 'User rejected', user: { ...user.toObject(), id: user._id.toString() } });
+  } catch (err) {
+    console.error('Reject user error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/admin/users/:id', authenticate, requireRole('admin'), async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    await Requirement.deleteMany({ memberId: user._id.toString() });
+    res.json({ message: 'User and requirements deleted' });
+  } catch (err) {
+    console.error('Delete user error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/admin/assign', authenticate, requireRole('admin'), async (req, res) => {
+  try {
+    const { memberId, agentId } = req.body;
+    if (!memberId || !agentId) {
+      return res.status(400).json({ error: 'memberId and agentId are required' });
+    }
+    const user = await User.findByIdAndUpdate(memberId, { assignedAgentId: agentId }, { new: true }).select('-password');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json({ message: 'Agent assigned', user: { ...user.toObject(), id: user._id.toString() } });
+  } catch (err) {
+    console.error('Assign agent error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.get('/api/messages/history', authenticate, async (req, res) => {
   try {
     const { partnerId } = req.query;

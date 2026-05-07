@@ -33,7 +33,7 @@ export default function AdminDashboard({ onLogout }) {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/users', {
+      const res = await fetch('https://illuminati-production.up.railway.app/api/admin/users', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -44,17 +44,17 @@ export default function AdminDashboard({ onLogout }) {
   };
 
   const handleApprove = async (id) => {
-    await fetch(`/api/admin/approve/${id}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+    await fetch(`https://illuminati-production.up.railway.app/api/admin/approve/${id}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
     fetchUsers();
   };
 
   const handleReject = async (id) => {
-    await fetch(`/api/admin/reject/${id}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+    await fetch(`https://illuminati-production.up.railway.app/api/admin/reject/${id}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
     fetchUsers();
   };
 
   const handleDelete = async (id) => {
-    await fetch(`/api/admin/users/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    await fetch(`https://illuminati-production.up.railway.app/api/admin/users/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
     setDeleteId(null);
     fetchUsers();
   };
@@ -62,7 +62,7 @@ export default function AdminDashboard({ onLogout }) {
   const handleAssign = async (memberId) => {
     const agentId = assignMap[memberId];
     if (!agentId) return;
-    await fetch('/api/admin/assign', {
+    await fetch('https://illuminati-production.up.railway.app/api/admin/assign', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ memberId, agentId })
